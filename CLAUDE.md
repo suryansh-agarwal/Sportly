@@ -113,9 +113,10 @@ Rejected alternatives (don't re-propose): Flutter (no payoff over React skills),
 
 ## 5. Status (update me as work lands)
 
-- **Done:** vision doc (this file), stack spec (approved), vertical-slice-v1 plan (committed).
-- **In progress:** executing `docs/superpowers/plans/2026-07-07-vertical-slice-v1.md` on branch `vertical-slice-v1` via subagent-driven development. Progress ledger: `.superpowers/sdd/progress.md` (git-ignored) — trust it plus `git log` over memory. No implementation code exists yet beyond what the ledger/git log show.
-- **Slice scope:** sign up → add friend → log simple match (winner/score, official vs friendly) → per-sport W/L/D records + head-to-head on both profiles. Deliberately excluded from the slice: per-sport stats, live scoring, ratings, tournaments, groups, push, EAS, social sign-in.
+- **Done:** vision doc (this file), stack spec (approved), vertical-slice-v1 plan, and the **vertical slice v1 itself** on branch `vertical-slice-v1`: Expo SDK 57 + TypeScript + NativeWind app with Supabase email auth (signup trigger creates profile), friend requests, match logging (winner/score, official vs friendly), and per-sport W/L/D records with head-to-head profile views. Schema: `supabase/migrations/0001-0003` (profiles/sports, friendships, matches — all RLS'd), applied to the dev project. 8/8 Vitest tests, tsc clean, data-layer E2E passed (sign-in, friend flow, match logging, RLS negatives, official/friendly separation) — see `docs/superpowers/plans/2026-07-07-vertical-slice-v1.md` and the ledger.
+- **Slice scope (was):** sign up → add friend → log simple match → per-sport W/L/D + head-to-head. Deliberately excluded: per-sport stats, live scoring, ratings, tournaments, groups, push, EAS, social sign-in.
+- **Backend:** Supabase project **Sportly**, ref `amfubmmmsfycdhgtmcsw` (Sportly org, Tokyo), linked via CLI. Email confirmation is OFF (dev). ⚠️ Supabase rejects `@test.com` emails — test accounts are `suryanshagarwal13+alice@gmail.com` / `suryanshagarwal13+bob@gmail.com`, both `password123`, usernames `alice`/`bob`.
+- **Known deferred findings (fix before ratings/tournaments trust this data):** (1) friendships UPDATE policy lacks column-immutability — an addressee could rewrite requester_id/addressee_id while accepting; needs a hardening migration (`with check` on addressee_id + immutability trigger). (2) `useLogMatch` two-step insert can orphan a participant-less match on partial failure — `computeRecord` skips them safely; consider an atomic RPC later. (3) Empty score input coerces to 0 in log-match. (4) `accept` mutation in friends screen has no onError. Ledger: `.superpowers/sdd/progress.md` (git-ignored).
 
 ## 6. Open Decisions (ask Suryansh — do not decide unilaterally)
 
