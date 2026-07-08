@@ -43,7 +43,7 @@ Shape rules (enforced in the RPC, not as cross-table CHECKs): 1v1 → exactly 2 
 
 `log_match(p_sport_id text, p_match_type text, p_format text, p_score_a int, p_score_b int, p_participants jsonb) returns uuid`
 
-- Plain `language plpgsql`, **invoker rights** (no SECURITY DEFINER) so all existing RLS policies still gate the inserts; `set search_path = public, pg_temp`.
+- `language plpgsql` **SECURITY DEFINER** with `set search_path = public, pg_temp`, `granted to authenticated` only (revoked from `anon`/`public`). Definer rights are required because this migration drops the client insert policies — the RPC's internal validation replaces them as the authorization layer for writes. (Corrected from an earlier draft that said invoker rights, which cannot work once the insert policies are dropped.) Select policies still gate all reads.
 - `p_participants`: array of `{ profile_id, side, rank, score, stats }`.
 - Validates shape rules above; **requires `auth.uid()` to be among the participants** (creator-must-play, closes review finding); inserts match + all participants in one transaction (closes orphaned-match finding).
 - Derives outcomes server-side (closes outcome-spoofing finding): 1v1/teams — higher side score wins, equal draws, applied to every member of the side; ffa — `rank = 1` → win (shared on ties), else loss.
