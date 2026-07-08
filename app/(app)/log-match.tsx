@@ -1,10 +1,9 @@
 import { Text, View } from 'react-native';
-import '../global.css';
 
-export default function Index() {
+export default function LogMatch() {
   return (
     <View className="flex-1 items-center justify-center bg-white">
-      <Text className="text-2xl font-bold text-emerald-600">Sportly</Text>
+      <Text className="text-2xl font-bold text-emerald-600">Log Match</Text>
     </View>
   );
 }
