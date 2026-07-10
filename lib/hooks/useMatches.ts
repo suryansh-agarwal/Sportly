@@ -1,8 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase';
-import { useAuth } from '../auth';
-import { deriveOutcomes } from '../outcomes';
-import type { MatchRow, MatchType } from '../types';
+import type { MatchFormat, MatchRow, MatchType, ParticipantRow, Side } from '../types';
+
+const MATCH_SELECT =
+  'id, sport_id, match_type, format, played_at, score_a, score_b, ' +
+  'participants:match_participants(profile_id, score, outcome, side, rank, stats)';
+
+const MATCH_DETAIL_SELECT =
+  'id, sport_id, match_type, format, played_at, score_a, score_b, ' +
+  'participants:match_participants(profile_id, score, outcome, side, rank, stats, profile:profiles(username))';
+
+export type MatchDetailParticipant = ParticipantRow & { profile: { username: string } };
+export type MatchDetailRow = Omit<MatchRow, 'participants'> & { participants: MatchDetailParticipant[] };
 
 export function useSports() {
   return useQuery({
@@ -21,42 +30,61 @@ export function useMatches() {
     queryFn: async (): Promise<MatchRow[]> => {
       const { data, error } = await supabase
         .from('matches')
-        .select(
-          'id, sport_id, match_type, played_at, participants:match_participants(profile_id, score, outcome)'
-        )
-        .order('played_at', { ascending: false });
+        .select(MATCH_SELECT)
+        .order('played_at', { ascending: false })
+        .order('created_at', { ascending: false });
       if (error) throw error;
       return data as unknown as MatchRow[];
     },
   });
 }
 
+export function useMatch(id: string) {
+  return useQuery({
+    queryKey: ['match', id],
+    enabled: !!id,
+    queryFn: async (): Promise<MatchDetailRow> => {
+      const { data, error } = await supabase
+        .from('matches')
+        .select(MATCH_DETAIL_SELECT)
+        .eq('id', id)
+        .single();
+      if (error) throw error;
+      return data as unknown as MatchDetailRow;
+    },
+  });
+}
+
+export type LogMatchParticipant = {
+  profile_id: string;
+  side: Side | null;
+  rank: number | null;
+  score: number | null;
+  stats: Record<string, number> | null;
+};
+
 export type LogMatchInput = {
   sportId: string;
   matchType: MatchType;
-  opponentId: string;
-  myScore: number;
-  theirScore: number;
+  format: MatchFormat;
+  scoreA: number | null;
+  scoreB: number | null;
+  participants: LogMatchParticipant[];
 };
 
 export function useLogMatch() {
-  const { session } = useAuth();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: LogMatchInput) => {
-      const myId = session!.user.id;
-      const { data: match, error } = await supabase
-        .from('matches')
-        .insert({ sport_id: input.sportId, match_type: input.matchType, created_by: myId })
-        .select('id')
-        .single();
+      const { error } = await supabase.rpc('log_match', {
+        p_sport_id: input.sportId,
+        p_match_type: input.matchType,
+        p_format: input.format,
+        p_score_a: input.scoreA,
+        p_score_b: input.scoreB,
+        p_participants: input.participants,
+      });
       if (error) throw error;
-      const { mine, theirs } = deriveOutcomes(input.myScore, input.theirScore);
-      const { error: pError } = await supabase.from('match_participants').insert([
-        { match_id: match.id, profile_id: myId, score: input.myScore, outcome: mine },
-        { match_id: match.id, profile_id: input.opponentId, score: input.theirScore, outcome: theirs },
-      ]);
-      if (pError) throw pError;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['matches'] }),
   });
