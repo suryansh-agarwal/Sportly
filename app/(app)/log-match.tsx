@@ -162,7 +162,7 @@ export default function LogMatch() {
         <>
           <SectionLabel>Sport</SectionLabel>
           <View className="flex-row flex-wrap gap-2">
-            {(sports ?? []).map((s) => (
+            {(sports ?? []).filter((s) => getSport(s.id)).map((s) => (
               <Chip key={s.id} label={s.name} selected={sportId === s.id}
                 onPress={() => { setSportId(s.id); resetPlayers('1v1'); }} />
             ))}
