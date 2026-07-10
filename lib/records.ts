@@ -26,9 +26,10 @@ export function computeRecord(matches: MatchRow[], profileId: string): SportReco
 }
 
 export function filterHeadToHead(matches: MatchRow[], a: string, b: string): MatchRow[] {
-  return matches.filter(
-    (m) =>
-      m.participants.some((p) => p.profile_id === a) &&
-      m.participants.some((p) => p.profile_id === b)
-  );
+  return matches.filter((m) => {
+    if (m.format === 'ffa') return false;
+    const pa = m.participants.find((p) => p.profile_id === a);
+    const pb = m.participants.find((p) => p.profile_id === b);
+    return !!pa?.side && !!pb?.side && pa.side !== pb.side;
+  });
 }
