@@ -1,9 +1,11 @@
 import { FlatList, Pressable, Text, View } from 'react-native';
+import { Link } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../lib/auth';
 import { useProfile } from '../../lib/hooks/useProfile';
 import { useMatches } from '../../lib/hooks/useMatches';
 import { computeRecord } from '../../lib/records';
+import { matchSummary } from '../../lib/matchSummary';
 
 export function RecordList({ records }: { records: ReturnType<typeof computeRecord> }) {
   if (records.length === 0) {
@@ -49,12 +51,22 @@ export default function Home() {
         renderItem={({ item }) => {
           const me = item.participants.find((p) => p.profile_id === myId);
           return (
-            <View className="flex-row justify-between rounded-lg border border-gray-200 p-3">
-              <Text className="capitalize">{item.sport_id.replace('_', ' ')}</Text>
-              <Text className={me?.outcome === 'win' ? 'text-emerald-600' : me?.outcome === 'loss' ? 'text-red-500' : 'text-gray-500'}>
-                {me?.outcome ?? '?'} · {item.match_type}
-              </Text>
-            </View>
+            <Link href={`/match/${item.id}`} asChild>
+              <Pressable className="flex-row items-center justify-between rounded-lg border border-gray-200 p-3">
+                <View>
+                  <Text className="capitalize">{item.sport_id.replace('_', ' ')}</Text>
+                  <Text className="text-xs text-gray-400">
+                    {item.format === 'ffa' ? 'free-for-all' : item.format} · {item.match_type}
+                  </Text>
+                </View>
+                <View className="items-end">
+                  <Text className={me?.outcome === 'win' ? 'text-emerald-600' : me?.outcome === 'loss' ? 'text-red-500' : 'text-gray-500'}>
+                    {me?.outcome ?? '?'}
+                  </Text>
+                  <Text className="text-gray-500">{matchSummary(item, myId)}</Text>
+                </View>
+              </Pressable>
+            </Link>
           );
         }}
         ListEmptyComponent={<Text className="text-gray-400">No matches logged</Text>}

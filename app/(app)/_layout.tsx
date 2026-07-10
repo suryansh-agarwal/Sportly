@@ -11,6 +11,7 @@ export default function AppLayout() {
       <Tabs.Screen name="friends" options={{ title: 'Friends' }} />
       <Tabs.Screen name="log-match" options={{ title: 'Log Match' }} />
       <Tabs.Screen name="profile/[id]" options={{ href: null }} />
+      <Tabs.Screen name="match/[id]" options={{ href: null }} />
     </Tabs>
   );
 }
