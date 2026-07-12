@@ -4,6 +4,8 @@ import { router } from 'expo-router';
 import { useAuth } from '../../lib/auth';
 import { useFriends } from '../../lib/hooks/useFriends';
 import { useLogMatch, useSports, type LogMatchParticipant } from '../../lib/hooks/useMatches';
+import { useStartLiveMatch } from '../../lib/hooks/useLive';
+import { SCORING_CONFIGS } from '../../lib/scoring/configs';
 import { getSport } from '../../lib/sports';
 import type { MatchFormat, MatchType, Side } from '../../lib/types';
 
@@ -30,6 +32,7 @@ export default function LogMatch() {
   const { data: sports } = useSports();
   const { data: friendData } = useFriends();
   const logMatch = useLogMatch();
+  const startLive = useStartLiveMatch();
 
   const [step, setStep] = useState(0);
   const [sportId, setSportId] = useState('');
@@ -153,6 +156,29 @@ export default function LogMatch() {
     );
   }
 
+  function onScoreLive() {
+    const err = stepValid();
+    if (err) { Alert.alert('Hold on', err); return; }
+    startLive.mutate(
+      {
+        sportId,
+        matchType,
+        format: format as '1v1' | 'teams',
+        participants: [
+          ...sideA.map((pid) => ({ profile_id: pid, side: 'a' as const })),
+          ...sideB.map((pid) => ({ profile_id: pid, side: 'b' as const })),
+        ],
+      },
+      {
+        onSuccess: (liveId) => {
+          setStep(0); setSportId(''); resetPlayers('1v1'); setStatInputs({}); setStatsFor(null);
+          router.push(`/live/${liveId}`);
+        },
+        onError: (e) => Alert.alert('Could not start live match', e.message),
+      }
+    );
+  }
+
   return (
     <ScrollView className="flex-1 bg-white p-6 pt-16" contentContainerClassName="gap-4 pb-12">
       <Text className="text-2xl font-bold">Log a match</Text>
@@ -198,6 +224,17 @@ export default function LogMatch() {
             ))}
           </View>
           {friends.length === 0 && <Text className="text-gray-400">Add a friend first</Text>}
+          {SCORING_CONFIGS[sportId] && (
+            <Pressable
+              className="mt-2 rounded-lg border border-red-400 p-4"
+              disabled={startLive.isPending}
+              onPress={onScoreLive}
+            >
+              <Text className="text-center font-semibold text-red-500">
+                {startLive.isPending ? 'Starting…' : '● Score live instead'}
+              </Text>
+            </Pressable>
+          )}
         </>
       )}
 
