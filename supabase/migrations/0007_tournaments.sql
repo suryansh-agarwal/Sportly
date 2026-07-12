@@ -5,7 +5,7 @@ create table public.tournaments (
   format text not null check (format in ('round_robin', 'knockout')),
   status text not null default 'draft' check (status in ('draft', 'active', 'completed', 'cancelled')),
   created_by uuid not null references public.profiles(id),
-  join_token text not null unique default replace(replace(encode(gen_random_bytes(9), 'base64'), '/', '_'), '+', '-'),
+  join_token text not null unique default substr(md5(random()::text || clock_timestamp()::text), 1, 16),
   winner_id uuid references public.profiles(id),
   created_at timestamptz not null default now()
 );
