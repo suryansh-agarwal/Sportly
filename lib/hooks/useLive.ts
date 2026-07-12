@@ -74,7 +74,11 @@ export function useLiveMatch(id: string) {
           qc.invalidateQueries({ queryKey: ['live-list'] });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          qc.invalidateQueries({ queryKey: ['live', id] });
+        }
+      });
     return () => {
       supabase.removeChannel(channel);
     };
