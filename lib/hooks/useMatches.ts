@@ -75,8 +75,8 @@ export type LogMatchInput = {
 export function useLogMatch() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: LogMatchInput) => {
-      const { error } = await supabase.rpc('log_match', {
+    mutationFn: async (input: LogMatchInput): Promise<string> => {
+      const { data, error } = await supabase.rpc('log_match', {
         p_sport_id: input.sportId,
         p_match_type: input.matchType,
         p_format: input.format,
@@ -85,6 +85,7 @@ export function useLogMatch() {
         p_participants: input.participants,
       });
       if (error) throw error;
+      return data as string;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['matches'] }),
   });

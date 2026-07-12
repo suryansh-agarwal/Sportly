@@ -8,9 +8,10 @@ import { foldEvents } from '../../../lib/scoring/engine';
 import { SCORING_CONFIGS } from '../../../lib/scoring/configs';
 import { getSport } from '../../../lib/sports';
 import type { Side } from '../../../lib/scoring/types';
+import { useRecordFixtureResult } from '../../../lib/hooks/useTournaments';
 
 export default function LiveMatch() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, fixture, tournament } = useLocalSearchParams<{ id: string; fixture?: string; tournament?: string }>();
   const { session } = useAuth();
   const myId = session!.user.id;
   const { data, isLoading } = useLiveMatch(id ?? '');
@@ -18,6 +19,7 @@ export default function LiveMatch() {
   const undoPoint = useUndoPoint(id ?? '');
   const finish = useFinishLiveMatch();
   const abandon = useAbandonLiveMatch();
+  const recordResult = useRecordFixtureResult();
 
   if (isLoading || !data) return <View className="flex-1 bg-white" />;
   const { match, events } = data;
@@ -53,7 +55,22 @@ export default function LiveMatch() {
     finish.mutate(
       { liveMatchId: id!, scoreA: state.setsWon.a, scoreB: state.setsWon.b },
       {
-        onSuccess: (matchId) => router.replace(`/match/${matchId}`),
+        onSuccess: (matchId) => {
+          if (fixture && tournament) {
+            recordResult.mutate(
+              { fixtureId: fixture, matchId, tournamentId: tournament },
+              {
+                onSuccess: () => router.replace(`/tournament/${tournament}`),
+                onError: (e) => {
+                  Alert.alert('Match saved, but fixture link failed', e.message);
+                  router.replace(`/match/${matchId}`);
+                },
+              }
+            );
+          } else {
+            router.replace(`/match/${matchId}`);
+          }
+        },
         onError: (e) => Alert.alert('Could not finish', e.message),
       }
     );
