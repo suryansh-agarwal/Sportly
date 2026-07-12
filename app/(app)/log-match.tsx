@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '../../lib/auth';
 import { useFriends } from '../../lib/hooks/useFriends';
 import { useLogMatch, useSports, type LogMatchParticipant } from '../../lib/hooks/useMatches';
 import { useStartLiveMatch } from '../../lib/hooks/useLive';
+import { useRecordFixtureResult } from '../../lib/hooks/useTournaments';
 import { SCORING_CONFIGS } from '../../lib/scoring/configs';
 import { getSport } from '../../lib/sports';
 import type { MatchFormat, MatchType, Side } from '../../lib/types';
@@ -33,6 +34,11 @@ export default function LogMatch() {
   const { data: friendData } = useFriends();
   const logMatch = useLogMatch();
   const startLive = useStartLiveMatch();
+  const params = useLocalSearchParams<{
+    fixtureId?: string; tournamentId?: string; sportId?: string; opponentId?: string;
+  }>();
+  const fixtureMode = !!params.fixtureId;
+  const recordResult = useRecordFixtureResult();
 
   const [step, setStep] = useState(0);
   const [sportId, setSportId] = useState('');
@@ -46,6 +52,16 @@ export default function LogMatch() {
   const [matchType, setMatchType] = useState<MatchType>('official');
   const [statsFor, setStatsFor] = useState<string | null>(null);
   const [statInputs, setStatInputs] = useState<Record<string, Record<string, string>>>({});
+  const [fixtureInit, setFixtureInit] = useState(false);
+  if (fixtureMode && !fixtureInit && params.sportId && params.opponentId) {
+    setFixtureInit(true);
+    setSportId(params.sportId);
+    setFormat('1v1');
+    setSideA([myId]);
+    setSideB([params.opponentId]);
+    setMatchType('official');
+    setStep(3); // straight to scores; sport/format/players are locked by the fixture
+  }
 
   const sport = sportId ? getSport(sportId) : undefined;
   const friends = friendData?.friends ?? [];
@@ -147,9 +163,22 @@ export default function LogMatch() {
         participants: parts,
       },
       {
-        onSuccess: () => {
-          setStep(0); setSportId(''); resetPlayers('1v1'); setStatInputs({}); setStatsFor(null);
-          router.push('/');
+        onSuccess: (matchId) => {
+          const done = () => {
+            setStep(0); setSportId(''); resetPlayers('1v1'); setStatInputs({}); setStatsFor(null); setFixtureInit(false);
+            router.push(fixtureMode && params.tournamentId ? `/tournament/${params.tournamentId}` : '/');
+          };
+          if (fixtureMode && params.fixtureId && params.tournamentId) {
+            recordResult.mutate(
+              { fixtureId: params.fixtureId, matchId, tournamentId: params.tournamentId },
+              {
+                onSuccess: done,
+                onError: (e) => Alert.alert('Match logged, but fixture link failed', e.message),
+              }
+            );
+          } else {
+            done();
+          }
         },
         onError: (e) => Alert.alert('Failed to log match', e.message),
       }
@@ -224,7 +253,7 @@ export default function LogMatch() {
             ))}
           </View>
           {friends.length === 0 && <Text className="text-gray-400">Add a friend first</Text>}
-          {SCORING_CONFIGS[sportId] && (
+          {!fixtureMode && SCORING_CONFIGS[sportId] && (
             <Pressable
               className="mt-2 rounded-lg border border-red-400 p-4"
               disabled={startLive.isPending}
@@ -308,7 +337,7 @@ export default function LogMatch() {
       )}
 
       <View className="mt-2 flex-row gap-3">
-        {step > 0 && (
+        {step > (fixtureMode ? 3 : 0) && (
           <Pressable className="flex-1 rounded-lg border border-emerald-600 p-4" onPress={back}>
             <Text className="text-center font-semibold text-emerald-700">Back</Text>
           </Pressable>
