@@ -31,12 +31,22 @@ describe('computeStandings', () => {
   });
 
   it('two-way points tie resolves by head-to-head', () => {
-    // x and y both beat z, x lost to y head-to-head -> y first despite identical points
+    // x and y both finish on 6 points; x has the better score diff, but y won their
+    // head-to-head — only the swap branch can put y first.
     const rows = computeStandings(
-      [F('1', 'x', 'z', 'x'), F('2', 'y', 'z', 'y'), F('3', 'x', 'y', 'y'), F('4', 'z', 'x', 'x'), F('5', 'z', 'y', 'y')],
-      {},
-      players('x', 'y', 'z')
+      [
+        F('1', 'x', 'z', 'x'),
+        F('2', 'x', 'w', 'x'),
+        F('3', 'y', 'x', 'y'),
+        F('4', 'z', 'y', 'z'),
+        F('5', 'y', 'w', 'y'),
+        F('6', 'w', 'z', 'w'),
+      ],
+      { x: 5, y: 0 },
+      players('x', 'y', 'z', 'w')
     );
+    expect(rows[0].points).toBe(6);
+    expect(rows[1].points).toBe(6);
     expect(rows[0].profileId).toBe('y');
     expect(rows[1].profileId).toBe('x');
   });
