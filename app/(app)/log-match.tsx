@@ -37,7 +37,6 @@ export default function LogMatch() {
   const params = useLocalSearchParams<{
     fixtureId?: string; tournamentId?: string; sportId?: string; opponentId?: string;
   }>();
-  const fixtureMode = !!params.fixtureId;
   const recordResult = useRecordFixtureResult();
 
   const [step, setStep] = useState(0);
@@ -52,9 +51,16 @@ export default function LogMatch() {
   const [matchType, setMatchType] = useState<MatchType>('official');
   const [statsFor, setStatsFor] = useState<string | null>(null);
   const [statInputs, setStatInputs] = useState<Record<string, Record<string, string>>>({});
-  const [fixtureInit, setFixtureInit] = useState(false);
-  if (fixtureMode && !fixtureInit && params.sportId && params.opponentId) {
-    setFixtureInit(true);
+  const [activeFixtureId, setActiveFixtureId] = useState<string | null>(null);
+  const [consumedFixtureId, setConsumedFixtureId] = useState<string | null>(null);
+  const fixtureMode = activeFixtureId !== null;
+  if (
+    params.fixtureId &&
+    params.fixtureId !== consumedFixtureId &&
+    params.fixtureId !== activeFixtureId &&
+    params.sportId && params.opponentId
+  ) {
+    setActiveFixtureId(params.fixtureId);
     setSportId(params.sportId);
     setFormat('1v1');
     setSideA([myId]);
@@ -165,12 +171,13 @@ export default function LogMatch() {
       {
         onSuccess: (matchId) => {
           const done = () => {
-            setStep(0); setSportId(''); resetPlayers('1v1'); setStatInputs({}); setStatsFor(null); setFixtureInit(false);
+            setStep(0); setSportId(''); resetPlayers('1v1'); setStatInputs({}); setStatsFor(null);
+            setConsumedFixtureId(params.fixtureId ?? null); setActiveFixtureId(null);
             router.push(fixtureMode && params.tournamentId ? `/tournament/${params.tournamentId}` : '/');
           };
-          if (fixtureMode && params.fixtureId && params.tournamentId) {
+          if (fixtureMode && activeFixtureId && params.tournamentId) {
             recordResult.mutate(
-              { fixtureId: params.fixtureId, matchId, tournamentId: params.tournamentId },
+              { fixtureId: activeFixtureId, matchId, tournamentId: params.tournamentId },
               {
                 onSuccess: done,
                 onError: (e) => Alert.alert('Match logged, but fixture link failed', e.message),
@@ -334,6 +341,12 @@ export default function LogMatch() {
             </View>
           ))}
         </>
+      )}
+
+      {fixtureMode && (
+        <Pressable onPress={() => { setConsumedFixtureId(params.fixtureId ?? null); setActiveFixtureId(null); setStep(0); setSportId(''); resetPlayers('1v1'); setStatInputs({}); setStatsFor(null); }}>
+          <Text className="text-center text-gray-400">Exit fixture mode</Text>
+        </Pressable>
       )}
 
       <View className="mt-2 flex-row gap-3">
