@@ -4,11 +4,11 @@ import type { MatchFormat, MatchRow, MatchType, ParticipantRow, Side } from '../
 
 const MATCH_SELECT =
   'id, sport_id, match_type, format, played_at, score_a, score_b, ' +
-  'participants:match_participants(profile_id, score, outcome, side, rank, stats)';
+  'participants:match_participants(profile_id, score, outcome, side, rank, stats, rating_delta, rating_after)';
 
 const MATCH_DETAIL_SELECT =
   'id, sport_id, match_type, format, played_at, score_a, score_b, ' +
-  'participants:match_participants(profile_id, score, outcome, side, rank, stats, profile:profiles(username))';
+  'participants:match_participants(profile_id, score, outcome, side, rank, stats, rating_delta, rating_after, profile:profiles(username))';
 
 export type MatchDetailParticipant = ParticipantRow & { profile: { username: string } };
 export type MatchDetailRow = Omit<MatchRow, 'participants'> & { participants: MatchDetailParticipant[] };
@@ -87,6 +87,9 @@ export function useLogMatch() {
       if (error) throw error;
       return data as string;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['matches'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['matches'] });
+      qc.invalidateQueries({ queryKey: ['ratings'] });
+    },
   });
 }

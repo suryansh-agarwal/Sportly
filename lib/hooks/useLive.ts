@@ -193,6 +193,7 @@ export function useFinishLiveMatch() {
       qc.invalidateQueries({ queryKey: ['matches'] });
       qc.invalidateQueries({ queryKey: ['live-list'] });
       qc.invalidateQueries({ queryKey: ['live', input.liveMatchId] });
+      qc.invalidateQueries({ queryKey: ['ratings'] });
     },
   });
 }

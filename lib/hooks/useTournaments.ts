@@ -172,6 +172,7 @@ export function useRecordFixtureResult() {
       qc.invalidateQueries({ queryKey: ['tournament', input.tournamentId] });
       qc.invalidateQueries({ queryKey: ['tournaments'] });
       qc.invalidateQueries({ queryKey: ['matches'] });
+      qc.invalidateQueries({ queryKey: ['ratings'] });
     },
   });
 }
