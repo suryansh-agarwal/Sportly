@@ -6,7 +6,7 @@ const base: Omit<MatchRow, 'participants' | 'format' | 'score_a' | 'score_b'> = 
   id: '1', sport_id: 'tennis', match_type: 'official', played_at: '2026-07-09',
 };
 const P = (id: string, side: 'a' | 'b' | null, rank: number | null = null): ParticipantRow =>
-  ({ profile_id: id, score: null, outcome: 'win', side, rank, stats: null });
+  ({ profile_id: id, score: null, outcome: 'win', side, rank, stats: null, rating_delta: null, rating_after: null });
 
 describe('matchSummary', () => {
   it('shows viewer-side-first score for sided matches', () => {

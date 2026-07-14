@@ -7,21 +7,41 @@ import { useMatches } from '../../lib/hooks/useMatches';
 import { useLiveMatches } from '../../lib/hooks/useLive';
 import { computeRecord } from '../../lib/records';
 import { matchSummary } from '../../lib/matchSummary';
+import { useRatings, type RatingRow } from '../../lib/hooks/useRatings';
+import { displayRating } from '../../lib/ratings/display';
 
-export function RecordList({ records }: { records: ReturnType<typeof computeRecord> }) {
+export function RecordList({
+  records,
+  ratings,
+}: {
+  records: ReturnType<typeof computeRecord>;
+  ratings?: RatingRow[];
+}) {
   if (records.length === 0) {
     return <Text className="text-gray-400">No official matches yet</Text>;
   }
   return (
     <View className="gap-2">
-      {records.map((r) => (
-        <View key={r.sportId} className="flex-row justify-between rounded-lg border border-gray-200 p-3">
-          <Text className="font-semibold capitalize">{r.sportId.replace('_', ' ')}</Text>
-          <Text>
-            {r.wins}W - {r.losses}L - {r.draws}D
-          </Text>
-        </View>
-      ))}
+      {records.map((r) => {
+        const rating = ratings?.find((x) => x.sport_id === r.sportId);
+        return (
+          <View key={r.sportId} className="flex-row items-center justify-between rounded-lg border border-gray-200 p-3">
+            <View className="flex-row items-center gap-2">
+              <Text className="font-semibold capitalize">{r.sportId.replace('_', ' ')}</Text>
+              {rating != null && (
+                <View className="rounded-full bg-emerald-100 px-2 py-0.5">
+                  <Text className="text-xs font-semibold text-emerald-700">
+                    {displayRating(rating.rating)}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <Text>
+              {r.wins}W - {r.losses}L - {r.draws}D
+            </Text>
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -33,6 +53,7 @@ export default function Home() {
   const { data: matches } = useMatches();
   const records = computeRecord(matches ?? [], myId);
   const { data: liveMatches } = useLiveMatches();
+  const { data: ratings } = useRatings(myId);
 
   return (
     <View className="flex-1 gap-4 bg-white p-6 pt-16">
@@ -65,7 +86,7 @@ export default function Home() {
       )}
 
       <Text className="font-semibold">My record</Text>
-      <RecordList records={records} />
+      <RecordList records={records} ratings={ratings} />
 
       <Text className="font-semibold">Recent matches</Text>
       <FlatList

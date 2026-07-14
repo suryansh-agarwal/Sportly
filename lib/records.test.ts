@@ -3,7 +3,7 @@ import type { MatchFormat, MatchRow, MatchType, Outcome, ParticipantRow, Side } 
 import { computeRecord, filterHeadToHead } from './records';
 
 const P = (id: string, side: Side | null, outcome: Outcome, rank: number | null = null): ParticipantRow =>
-  ({ profile_id: id, score: null, outcome, side, rank, stats: null });
+  ({ profile_id: id, score: null, outcome, side, rank, stats: null, rating_delta: null, rating_after: null });
 
 const M = (
   id: string, sport: string, type: MatchType, format: MatchFormat,

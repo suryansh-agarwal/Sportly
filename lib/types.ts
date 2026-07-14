@@ -10,6 +10,8 @@ export type ParticipantRow = {
   side: Side | null;
   rank: number | null;
   stats: Record<string, number> | null;
+  rating_delta: number | null;
+  rating_after: number | null;
 };
 
 export type MatchRow = {
