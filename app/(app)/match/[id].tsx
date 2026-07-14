@@ -2,6 +2,7 @@ import { ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useMatch, type MatchDetailParticipant } from '../../../lib/hooks/useMatches';
 import { getSport } from '../../../lib/sports';
+import { formatDelta } from '../../../lib/ratings/display';
 
 function StatTable({ participants, sportId }: { participants: MatchDetailParticipant[]; sportId: string }) {
   const sport = getSport(sportId);
@@ -114,6 +115,31 @@ export default function MatchDetail() {
           <StatTable participants={ranked} sportId={match.sport_id} />
         </>
       )}
+
+      {match.match_type === 'official' &&
+        match.participants.some((p) => p.rating_delta != null) && (
+          <>
+            <Text className="font-semibold">Rating changes</Text>
+            <View className="gap-2">
+              {match.participants
+                .filter((p) => p.rating_delta != null && p.rating_after != null)
+                .map((p) => {
+                  const label = formatDelta(p.rating_delta!, p.rating_after!);
+                  const color = label.startsWith('+')
+                    ? 'text-emerald-600'
+                    : label.startsWith('−')
+                      ? 'text-red-500'
+                      : 'text-gray-500';
+                  return (
+                    <View key={p.profile_id} className="flex-row justify-between rounded-lg border border-gray-200 p-3">
+                      <Text numberOfLines={1}>{p.profile.username}</Text>
+                      <Text className={`font-semibold ${color}`}>{label}</Text>
+                    </View>
+                  );
+                })}
+            </View>
+          </>
+        )}
     </ScrollView>
   );
 }

@@ -6,6 +6,7 @@ import { useMatches } from '../../../lib/hooks/useMatches';
 import { computeRecord, filterHeadToHead } from '../../../lib/records';
 import { matchSummary } from '../../../lib/matchSummary';
 import { RecordList } from '../index';
+import { useRatings } from '../../../lib/hooks/useRatings';
 
 export default function FriendProfile() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -13,6 +14,7 @@ export default function FriendProfile() {
   const myId = session!.user.id;
   const { data: profile } = useProfile(id);
   const { data: matches } = useMatches();
+  const { data: ratings } = useRatings(id);
 
   const headToHead = filterHeadToHead(matches ?? [], myId, id);
   const theirRecordVsMe = computeRecord(headToHead, id);
@@ -21,7 +23,7 @@ export default function FriendProfile() {
     <View className="flex-1 gap-4 bg-white p-6 pt-16">
       <Text className="text-2xl font-bold">{profile?.username ?? '…'}</Text>
       <Text className="font-semibold">Their record vs you</Text>
-      <RecordList records={theirRecordVsMe} />
+      <RecordList records={theirRecordVsMe} ratings={ratings} />
       <Text className="font-semibold">Matches together</Text>
       <FlatList
         data={headToHead}
